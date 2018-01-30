@@ -9,8 +9,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by User on 28.01.2018.
@@ -44,8 +46,45 @@ public class PhotoGalleryFragment extends Fragment {
 
         @Override
         protected Void doInBackground(Void... voids) {
-            new FlickrFetchr().fetchItems();
+            List<GalleryItem> items = new FlickrFetchr().fetchItems();
             return null;
+        }
+    }
+    private class PhotoHolder extends RecyclerView.ViewHolder{
+        private TextView mTextView;
+        public PhotoHolder(View itemView) {
+            super(itemView);
+            mTextView = (TextView)itemView;
+        }
+
+        private void bindGalleryItem(GalleryItem galleryItem){
+            mTextView.setText(galleryItem.getCaption());
+        }
+    }
+
+    private class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder>{
+        private List<GalleryItem> mGalleryItems;
+
+        public PhotoAdapter(List<GalleryItem> galleryItems) {
+            super();
+            mGalleryItems = galleryItems;
+        }
+
+        @Override
+        public PhotoHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            LayoutInflater inflater = LayoutInflater.from(getActivity());
+            View view = inflater.inflate(android.R.layout.simple_list_item_1, parent, false);
+            return new PhotoHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(PhotoHolder holder, int position) {
+            holder.bindGalleryItem(mGalleryItems.get(position));
+        }
+
+        @Override
+        public int getItemCount() {
+            return mGalleryItems.size();
         }
     }
 }
