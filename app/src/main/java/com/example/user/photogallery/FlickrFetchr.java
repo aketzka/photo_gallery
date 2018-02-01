@@ -3,6 +3,9 @@ package com.example.user.photogallery;
 import android.net.Uri;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -11,6 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -53,7 +57,7 @@ public class FlickrFetchr {
         return new String(getUrlBytes(urlSpec));
     }
 
-    public List<GalleryItem> fetchItems(){
+    public List<GalleryItem> fetchItems(int page){
         List<GalleryItem> items = new ArrayList<GalleryItem>();
         try {
             String url = Uri.parse("https://api.flickr.com/services/rest/")
@@ -63,6 +67,7 @@ public class FlickrFetchr {
                     .appendQueryParameter("format", "json")
                     .appendQueryParameter("nojsoncallback", "1")
                     .appendQueryParameter("extras", "url_s")
+                    .appendQueryParameter("page", String.valueOf(page))
                     .build().toString();
             String jsonString = getUrlString(url);
             JSONObject jsonObject = new JSONObject(jsonString);
@@ -79,8 +84,12 @@ public class FlickrFetchr {
     private void parseItems(List<GalleryItem> items, JSONObject jsonObject) throws IOException, JSONException{
         JSONObject photosJSONObject = jsonObject.getJSONObject("photos");
         JSONArray photoJSONArray = photosJSONObject.getJSONArray("photo");
-
-        for(int i = 0; i < photoJSONArray.length(); i++){
+        String galleryString = photoJSONArray.toString();
+        Gson gson = new Gson();
+        Type galleryItemType = new TypeToken<ArrayList<GalleryItem>>(){}.getType();
+        List<GalleryItem> galleryItems = gson.fromJson(galleryString, galleryItemType);
+        items.addAll(galleryItems);
+        /*for(int i = 0; i < photoJSONArray.length(); i++){
             JSONObject photoJSONObject = photoJSONArray.getJSONObject(i);
             GalleryItem item = new GalleryItem();
             item.setCaption(photoJSONObject.getString("title"));
@@ -89,7 +98,9 @@ public class FlickrFetchr {
                 continue;
             item.setUrl(photoJSONObject.getString("url_s"));
             items.add(item);
-        }
+        }*/
     }
+
+
 
 }

@@ -1,12 +1,20 @@
 package com.example.user.photogallery;
 
+import com.google.gson.annotations.SerializedName;
+
 /**
  * Created by User on 30.01.2018.
  */
 
 public class GalleryItem {
+
+    @SerializedName("title")
     private String mCaption;
+    @SerializedName("id")
     private String mId;
+    @SerializedName("url_s")
+    private String mUrl;
+
 
     public String getCaption() {
         return mCaption;
@@ -31,8 +39,6 @@ public class GalleryItem {
     public void setUrl(String url) {
         mUrl = url;
     }
-
-    private String mUrl;
 
     @Override
     public String toString() {
