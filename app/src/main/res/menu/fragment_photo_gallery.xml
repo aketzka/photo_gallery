@@ -12,6 +12,10 @@
         android:id="@+id/menu_item_clear"
         android:title="@string/clear_search"
         myapp:showAsAction="never">
-
+    </item>
+    <item
+        android:id="@+id/menu_item_toggle_polling"
+        android:title="@string/start_polling"
+        myapp:showAsAction="ifRoom">
     </item>
 </menu>

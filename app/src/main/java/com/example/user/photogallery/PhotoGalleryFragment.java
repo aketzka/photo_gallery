@@ -1,5 +1,8 @@
 package com.example.user.photogallery;
 
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -23,6 +26,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -39,6 +43,7 @@ public class PhotoGalleryFragment extends Fragment {
     LruCache<String, Bitmap> mBitmapLruCache;
 
     private RecyclerView mRecyclerView;
+    private ProgressDialog mProgressDialog;
     private List<GalleryItem> mGalleryItems = new ArrayList<GalleryItem>();
     private int mPageToDownload = 1;
     private ThumbnailDownloader<PhotoHolder> mThumbnailDownloader;
@@ -53,6 +58,7 @@ public class PhotoGalleryFragment extends Fragment {
         setRetainInstance(true);
         setHasOptionsMenu(true);
         mBitmapLruCache = new LruCache<>(MAX_CASH_SIZE);
+        PollService.setServiceAlarm(getActivity(), true);
         mThumbnailDownloader = new ThumbnailDownloader<PhotoHolder>(new Handler());
         mThumbnailDownloader.setThumbnailDownloadedListener(new ThumbnailDownloader.ThumbnailDownloadedListener<PhotoHolder>() {
             @Override
@@ -64,6 +70,7 @@ public class PhotoGalleryFragment extends Fragment {
         });
         mThumbnailDownloader.start();
         mThumbnailDownloader.getLooper();
+        mProgressDialog = new ProgressDialog(getActivity());
         updateItems();
         Log.i(TAG, "Background thread started");
     }
@@ -74,6 +81,13 @@ public class PhotoGalleryFragment extends Fragment {
         inflater.inflate(R.menu.fragment_photo_gallery, menu);
         MenuItem searchItem = (MenuItem)menu.findItem(R.id.menu_item_search);
         final SearchView searchView = (SearchView)searchItem.getActionView();
+        searchView.setOnSearchClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String query = QueryPreferences.getStoredQuery(getActivity());
+                searchView.setQuery(query, false);
+            }
+        });
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String s) {
@@ -89,6 +103,8 @@ public class PhotoGalleryFragment extends Fragment {
                 return false;
             }
         });
+        MenuItem alarmItem = (MenuItem)menu.findItem(R.id.menu_item_toggle_polling);
+        alarmItem.setTitle(PollService.isServiceAlarmOn(getActivity())? R.string.start_polling : R.string.stop_polling);
     }
 
     @Override
@@ -98,6 +114,11 @@ public class PhotoGalleryFragment extends Fragment {
                 QueryPreferences.setStoredQuery(getActivity(), null);
                 updateItems();
                 return true;
+            case R.id.menu_item_toggle_polling:
+                boolean shouldStartAlarm = !PollService.isServiceAlarmOn(getActivity());
+                PollService.setServiceAlarm(getActivity(), shouldStartAlarm);
+                getActivity().invalidateOptionsMenu();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -105,6 +126,7 @@ public class PhotoGalleryFragment extends Fragment {
 
     private void updateItems() {
         String query = QueryPreferences.getStoredQuery(getActivity());
+        mProgressDialog.show();
         new FetchItemsTask(query).execute();
     }
 
@@ -162,14 +184,16 @@ public class PhotoGalleryFragment extends Fragment {
         @Override
         protected List<GalleryItem> doInBackground(Void... voids) {
             if(mQuery == null){
-                return new FlickrFetchr().fetchRecentPhotos(mPageToDownload++);
+                return new FlickrFetchr().fetchRecentPhotos(mPageToDownload);
             }else {
-                return new FlickrFetchr().searchPhotos(mQuery, mPageToDownload++);
+                return new FlickrFetchr().searchPhotos(mQuery, mPageToDownload);
             }
         }
 
         @Override
         protected void onPostExecute(List<GalleryItem> galleryItems) {
+            mProgressDialog.hide();
+            mGalleryItems.clear();
             mGalleryItems.addAll(galleryItems);
             setupAdapter();
         }

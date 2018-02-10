@@ -94,11 +94,13 @@ public class FlickrFetchr {
 
     public List<GalleryItem> fetchRecentPhotos(int page){
         String url = buildUrl(FETCH_RECENTS_METHOD, null, page);
+        Log.i(TAG, "Fetching photos");
         return downloadGalleryItems(url);
     }
 
     public List<GalleryItem> searchPhotos(String query, int page){
         String url = buildUrl(SEARCH_METHOD, query, page);
+        Log.i(TAG, "Searching photo, query: " + query);
         return downloadGalleryItems(url);
     }
 
