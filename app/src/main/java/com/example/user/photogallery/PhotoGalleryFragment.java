@@ -37,7 +37,7 @@ import java.util.List;
  * Created by User on 28.01.2018.
  */
 
-public class PhotoGalleryFragment extends Fragment {
+public class PhotoGalleryFragment extends VisibleFragment {
     private static final String TAG = "PhotoGalleryFragment";
     private static final int MAX_CASH_SIZE = 40;
     LruCache<String, Bitmap> mBitmapLruCache;
@@ -198,15 +198,28 @@ public class PhotoGalleryFragment extends Fragment {
             setupAdapter();
         }
     }
-    private class PhotoHolder extends RecyclerView.ViewHolder{
+    private class PhotoHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         private ImageView mImageView;
+        private GalleryItem mGalleryItem;
+
         public PhotoHolder(View itemView) {
             super(itemView);
             mImageView = (ImageView)itemView.findViewById(R.id.fragment_photo_gallery_item_view);
+            itemView.setOnClickListener(this);
         }
 
         private void bindGalleryItem(Drawable drawable){
             mImageView.setImageDrawable(drawable);
+        }
+
+        public void bindGallaryItem(GalleryItem galleryItem){
+            mGalleryItem = galleryItem;
+        }
+
+        @Override
+        public void onClick(View view) {
+            Intent intent = PhotoPageActivity.newIntent(getActivity(), mGalleryItem.getPhotoPageUri());
+            startActivity(intent);
         }
     }
 
@@ -229,6 +242,7 @@ public class PhotoGalleryFragment extends Fragment {
         public void onBindViewHolder(PhotoHolder holder, int position) {
             if(position == getItemCount() - 1) mReachedEnd = true;
             Bitmap bitmap = mBitmapLruCache.get(mGalleryItems.get(position).getUrl());
+            holder.bindGallaryItem(mGalleryItems.get(position));
             if(bitmap == null) {
                 holder.bindGalleryItem(getResources().getDrawable(R.drawable.waiting));
                 mThumbnailDownloader.queueThumbnail(holder, mGalleryItems.get(position).getUrl());

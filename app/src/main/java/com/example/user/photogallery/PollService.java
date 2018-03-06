@@ -1,5 +1,6 @@
 package com.example.user.photogallery;
 
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.IntentService;
 import android.app.Notification;
@@ -24,6 +25,11 @@ import java.util.List;
 public class PollService extends IntentService {
     private static final String TAG = "PollService";
     private static final int POLL_INTERVAL = 1000 * 60;//60 seconds
+    public static final String ACTION_SHOW_NOTIFICATION = "com.bignerdranch.android.photogallery.SHOW_NOTIFICATION";
+    public static final String PERM_PRIVATE = "com.bignerdranch.android.photogallery.PRIVATE";
+    public static final String REQUEST_CODE = "REQUEST_CODE";
+    public static final String NOTIFICATION = "NOTIFICATION";
+
 
     public static Intent newIntent(Context context){
         return new Intent(context, PollService.class);
@@ -53,24 +59,32 @@ public class PollService extends IntentService {
         String id = items.get(0).getId();
         if(id == lastId)
             Log.i(TAG, "Same result");
-        else
+        else {
             Log.i(TAG, "New result");
-        Resources resources = getResources();
-        Intent i = PhotoGalleryActivity.newIntent(this);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, i, 0);
 
-        Notification notification = new NotificationCompat.Builder(this)
-                .setTicker(resources.getString(R.string.new_pictures_title))
-                .setSmallIcon(android.R.drawable.ic_menu_report_image)
-                .setContentTitle(resources.getString(R.string.new_pictures_title))
-                .setContentText(resources.getString(R.string.new_pictures_text))
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true)
-                .build();
+            Resources resources = getResources();
+            Intent i = PhotoGalleryActivity.newIntent(this);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, i, 0);
 
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        notificationManager.notify(0, notification);
+            Notification notification = new NotificationCompat.Builder(this)
+                    .setTicker(resources.getString(R.string.new_pictures_title))
+                    .setSmallIcon(android.R.drawable.ic_menu_report_image)
+                    .setContentTitle(resources.getString(R.string.new_pictures_title))
+                    .setContentText(resources.getString(R.string.new_pictures_text))
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .build();
+
+            showBackgroundNotification(0, notification);
+        }
         QueryPreferences.setLastResultId(this, id);
+    }
+
+    private void showBackgroundNotification(int requestCode, Notification notification) {
+        Intent intent = new Intent(ACTION_SHOW_NOTIFICATION);
+        intent.putExtra(REQUEST_CODE, requestCode);
+        intent.putExtra(NOTIFICATION, notification);
+        sendOrderedBroadcast(intent, PERM_PRIVATE, null, null, Activity.RESULT_OK, null, null);
     }
 
     private boolean isNetworkAvailable(){
